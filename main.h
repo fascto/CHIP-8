@@ -22,9 +22,9 @@ public:
 
     void render( float x, float y );
 
-    int getWidth();
-    int getHeight();
-    bool isLoaded();
+    [[nodiscard]] int getWidth() const;
+    [[nodiscard]] int getHeight() const;
+    [[nodiscard]] bool isLoaded() const;
 
 private:
     SDL_Texture* mTexture;
