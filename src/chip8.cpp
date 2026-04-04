@@ -21,6 +21,7 @@ bool Display::draw(int x, int y) {
 }
 
 Chip8::Chip8() {
+
     // Initialization hex fonts in mem
     unsigned char chip8_fonts[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -278,11 +279,15 @@ void Chip8::LoopFDE() {
 
         // Set I = nnn.(Annn - LD I, addr)
         case 0xA000:
+            I = nnn;
             break;
 
+        // Jump to location nnn + V0. (Bnnn - JP V0, addr)
         case 0xB000:
+            PC = nnn + V[0x00];
             break;
 
+        // Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
         case 0xC000:
             break;
 

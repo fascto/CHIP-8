@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cstdint>
 #include <cstring>
+#include <random>
 
 struct Display {
     static constexpr int WIDTH = 64;
@@ -51,6 +52,12 @@ private:
     uint8_t keybind[16]{0};
 
     bool is_paused{false};
+
+    // Rnd numerbs
+    std::random_device rd;
+    std::mt19937 gen{rd()};
+    std::uniform_int_distribution<uint8_t> distr{0, 255};
+
 
 public:
     Chip8();
@@ -117,6 +124,10 @@ public:
 
     [[nodiscard]] bool getIsPaused() const {
         return this->is_paused;
+    }
+
+    uint8_t getRandomByte() {
+        return distr(gen);
     }
 
 };
