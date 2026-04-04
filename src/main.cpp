@@ -49,9 +49,7 @@ int main( int argc, char* args[] ) {
         // Prueba
         Chip8 *chip8 = new Chip8();
 
-        chip8->loadProgram("elpepe.ch8");
-
-
+        chip8->loadProgram("dummy.ch8");
 
         // Game Loop
         while (!quit) {

@@ -11,6 +11,10 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
+
+constexpr uint16_t FPS = 60;
+constexpr uint16_t THRESHOLD = 1 / FPS;
+
 // Modern CHIP8 keymap - SDL Keys
 constexpr uint8_t keymap[16] = {
     SDLK_X,

@@ -30,7 +30,6 @@ struct Display {
 };
 
 class Chip8 {
-
 private:
     uint8_t mem[4096]{0};
 
@@ -38,7 +37,7 @@ private:
 
     uint16_t I{0};
     uint16_t PC{0x200};
-    uint16_t SP{0};
+    uint8_t SP{0};
 
     uint8_t delay_timer {0};
     uint8_t sound_timer {0};
@@ -50,6 +49,8 @@ private:
     bool draw_flag{false};
 
     uint8_t keybind[16]{0};
+
+    bool is_paused{false};
 
 public:
     Chip8();
@@ -77,6 +78,45 @@ public:
 
     void setKeybind(const uint8_t index, const uint8_t key) {
         this->keybind[index] = key;
+    }
+
+    /* INSTRUCTION CHIP-8 STRUCTURE (16-bit): [T][X][Y][N]
+    * X: The second nibble. Used to look up one of the 16 registers (VX) from V0 through VF.
+    * Y: The third nibble. Also used to look up one of the 16 registers (VY) from V0 through VF.
+    * N: The fourth nibble. A 4-bit number.
+    * NN: The second byte (third and fourth nibbles). An 8-bit immediate number.
+    * NNN: The second, third and fourth nibbles. A 12-bit immediate memory address.
+    */
+    static constexpr uint8_t getX(const uint16_t opcode) {
+        return (opcode & 0x0F00) >> 8;
+    }
+
+    static constexpr uint8_t getY(const uint16_t opcode) {
+        return (opcode & 0x00F0) >> 4;
+    }
+
+    static constexpr uint8_t getN(const uint16_t opcode) {
+        return (opcode & 0x000F);
+    }
+
+    static constexpr uint8_t getNN(const uint16_t opcode) {
+        return (opcode & 0x00FF);
+    }
+
+    static constexpr uint8_t getNNN(const uint16_t opcode) {
+        return (opcode & 0x0FFF);
+    }
+
+    void pauseCPU() {
+        this->is_paused = true;
+    }
+
+    void unpauseCPU() {
+        this->is_paused = false;
+    }
+
+    [[nodiscard]] bool getIsPaused() const {
+        return this->is_paused;
     }
 
 };
