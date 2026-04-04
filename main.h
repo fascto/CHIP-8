@@ -1,10 +1,13 @@
+//
+// Created by tdela on 3/4/2026.
+//
+
 #ifndef CHIP_8_MAIN_H
 #define CHIP_8_MAIN_H
 
-#include "ltexture.h"
 
-bool init();
-bool loadMedia();
-void close();
+class main {
+};
+
 
 #endif //CHIP_8_MAIN_H

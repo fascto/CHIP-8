@@ -1,4 +1,4 @@
-#include "ltexture.h"
+#include "../ltexture.h"
 
 LTexture::LTexture() : mTexture{nullptr}, mWidth{0}, mHeight{0} {}
 
