@@ -10,8 +10,8 @@
 #include <cstring>
 
 struct Display {
-    static inline constexpr int WIDTH = 64;
-    static inline constexpr int HEIGHT = 32;
+    static constexpr int WIDTH = 64;
+    static constexpr int HEIGHT = 32;
     uint8_t matrix[WIDTH][HEIGHT]{0};
 
     void clear() {
@@ -19,6 +19,14 @@ struct Display {
     }
 
     bool draw(int x, int y);
+
+    auto getDisplayMatrix() {
+        return matrix;
+    }
+
+    uint16_t getSize() {
+        return WIDTH * HEIGHT;
+    }
 };
 
 class Chip8 {
@@ -39,7 +47,9 @@ private:
 
     Display display{};
 
-    bool draw_flag;
+    bool draw_flag{false};
+
+    uint8_t keybind[16]{0};
 
 public:
     Chip8();
@@ -59,6 +69,14 @@ public:
 
     static uint8_t lowNibble(const uint8_t byte) {
         return (byte & 0x0F);
+    }
+
+    auto getDisplayMatrix() {
+        return this->display.getDisplayMatrix();
+    }
+
+    void setKeybind(const uint8_t index, const uint8_t key) {
+        this->keybind[index] = key;
     }
 
 };
