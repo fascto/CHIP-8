@@ -14,10 +14,24 @@ constexpr uint8_t testRom[] = {
     0x6A, 0x02,
     0xFF, 0x55
 };
-bool Display::draw(int x, int y) {
+bool Display::draw(int x, int y, uint8_t sprite_pixel) {
 
+    bool collision {false};
 
-    return false;
+    for (int i = 0; i < 8; i++) {
+        if (const uint8_t bit = (sprite_pixel >> (7 - i)) & 0x01; bit == 1 ) {
+            const int screenX = (x+1) % 64;
+            const int screenY = y % 32;
+
+            if ( this->matrix[screenX][screenY] == 1 ) {
+                collision = true;
+            }
+
+            this->matrix[screenX][screenY] ^= 1;
+        }
+    }
+
+    return collision;
 }
 
 Chip8::Chip8() {
@@ -112,10 +126,11 @@ void Chip8::LoopFDE() {
     const uint32_t opcode = mem[PC] << 8 | mem[PC + 1];
     PC += 2;
 
-    const uint8_t  x   = (opcode & 0x0F00) >> 8;
-    const uint8_t  y   = (opcode & 0x00F0) >> 4;
-    const uint16_t nnn = opcode & 0x0FFF;
-    const uint8_t  kk  = opcode & 0x00FF;
+    const uint8_t  x   = getX(opcode);
+    const uint8_t  y   = getY(opcode);
+    const uint16_t nnn = getNNN(opcode);
+    const uint8_t  kk  = getKK(opcode);
+    const uint8_t n = getN(opcode);
 
     // Decode
     switch (opcode & 0xF000) {
@@ -288,10 +303,23 @@ void Chip8::LoopFDE() {
             break;
 
         // Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
-        case 0xC000:
-            break;
+        case 0xC000: {
+            const uint8_t rnd_byte = getRandomByte();
+            V[x] = rnd_byte & kk;
 
+            break;
+        }
+
+        // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision (Dxyn - DRW Vx, Vy, nibble)
         case 0xD000:
+
+            V[0x0F] = 0;
+
+            for (uint8_t i = 0; i < n; i++) {
+                if (display.draw(V[x], V[y], mem[I+i]))
+                    V[0x0F] = 1;
+            }
+
             break;
 
         case 0xE000:

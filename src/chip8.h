@@ -19,7 +19,7 @@ struct Display {
         std::memset(matrix, 0, sizeof(matrix));
     }
 
-    bool draw(int x, int y);
+    bool draw(int x, int y, uint8_t pixel);
 
     auto getDisplayMatrix() {
         return matrix;
@@ -106,7 +106,7 @@ public:
         return (opcode & 0x000F);
     }
 
-    static constexpr uint8_t getNN(const uint16_t opcode) {
+    static constexpr uint8_t getKK(const uint16_t opcode) {
         return (opcode & 0x00FF);
     }
 
