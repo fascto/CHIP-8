@@ -30,6 +30,8 @@ struct Display {
     uint16_t getSize() {
         return WIDTH * HEIGHT;
     }
+
+    bool isPixelOn(int x, int y);
 };
 
 class Chip8 {
@@ -86,8 +88,8 @@ public:
         return this->display.getDisplayMatrix();
     }
 
-    void setKeybind(const uint8_t index, const uint8_t key) {
-        this->keybind[index] = key;
+    void setKeypress(const uint8_t index, const uint8_t key_state) {
+        this->keybind[index] = key_state;
     }
 
     /* INSTRUCTION CHIP-8 STRUCTURE (16-bit): [T][X][Y][N]
@@ -134,6 +136,10 @@ public:
     }
 
     void updateTimers();
+
+    bool isPixelOn(int x, int y) const {
+        return display.matrix[x][y];
+    }
 
 };
 

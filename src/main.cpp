@@ -3,33 +3,9 @@
 //
 
 #include "main.h"
-
 #include <chrono>
-
 #include "chip8.h"
-
-SDL_Window* window{nullptr};
-SDL_Renderer* gRenderer{nullptr};
-
-uint16_t gWidth{640};
-uint16_t gHeight{320};
-
-bool init() {
-
-    bool success{true};
-
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("Error in SDL initialization: ", SDL_GetError());
-        success = false;
-    } else {
-        if (!SDL_CreateWindowAndRenderer("CHIP8 Emulator", gWidth, gHeight, 0, &window, &gRenderer)) {
-            SDL_Log("Error in SDL creation: ", SDL_GetError());
-            success = false;
-        }
-    }
-
-    return success;
-}
+#include "chip8_gui.h"
 
 int main( int argc, char* args[] ) {
 
@@ -37,7 +13,12 @@ int main( int argc, char* args[] ) {
 
     int exit_code{0};
 
-    if (!init()) {
+    // Prueba
+    Chip8 chip8;
+    Chip8Gui chip8_gui(&chip8);
+
+
+    if (!chip8_gui.init()) {
         std::cout << "Failed to initialize!" << std::endl;
         exit_code = 1;
     } else {
@@ -46,10 +27,6 @@ int main( int argc, char* args[] ) {
 
         SDL_Event event;
         SDL_zero( event );
-
-
-        // Prueba
-        Chip8 chip8;
 
         chip8.loadProgram("dummy.ch8");
 
@@ -62,7 +39,15 @@ int main( int argc, char* args[] ) {
         while (game_is_running) {
 
             chip8.LoopFDE();
+
             // TODO: Funcion de dibujar con SDL
+            chip8_gui.render();
+
+            // Loop eventos
+            while (SDL_PollEvent(&event))
+                if (!chip8_gui.processInput(event))
+                    game_is_running = false;
+            }
 
             // Mover a una funciona quizas
             auto currentTime = std::chrono::high_resolution_clock::now();
@@ -71,22 +56,11 @@ int main( int argc, char* args[] ) {
             prevTime = currentTime;
             acc += deltaTime;
 
-            // Mover a una funciona quizas
-            while (SDL_PollEvent(&event)) {
-
-                if( event.type == SDL_EVENT_QUIT ) {
-                    game_is_running = false;
-                }
-            }
-
             while (acc >= targetFreq) {
                 chip8.updateTimers();
                 acc -= targetFreq;
             }
         }
-
-    }
-
 
     return exit_code;
 }

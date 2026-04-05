@@ -15,36 +15,6 @@
 constexpr uint16_t FPS = 60;
 constexpr uint16_t THRESHOLD = 1 / FPS;
 
-// Modern CHIP8 keymap - SDL Keys
-constexpr uint8_t keymap[16] = {
-    SDLK_X,
-    SDLK_1,
-    SDLK_2,
-    SDLK_3,
-    SDLK_Q,
-    SDLK_W,
-    SDLK_E,
-    SDLK_A,
-    SDLK_S,
-    SDLK_D,
-    SDLK_Z,
-    SDLK_C,
-    SDLK_4,
-    SDLK_R,
-    SDLK_F,
-    SDLK_V,
-};
-
-bool init();
-
-void processInput();
-
-void update();
-
-void render();
-
-void close();
-
 class main {
 };
 

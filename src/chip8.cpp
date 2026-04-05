@@ -34,6 +34,10 @@ bool Display::draw(int x, int y, uint8_t sprite_pixel) {
     return collision;
 }
 
+bool Display::isPixelOn(int x, int y) {
+    return this->matrix[x][y];
+}
+
 Chip8::Chip8() {
 
     // Initialization hex fonts in mem
@@ -144,8 +148,8 @@ void Chip8::LoopFDE() {
 
                     //Return from a subroutine.
             case 0x00EE:
-                    PC = stack[SP];
                     if (SP > 0) SP--;
+                    PC = stack[SP];
                     break;
 
             default:
