@@ -323,10 +323,106 @@ void Chip8::LoopFDE() {
             break;
 
         case 0xE000:
-            break;
+
+            switch ( opcode & 0x00FF ) {
+
+                // Skip next instruction if key with the value of Vx is not pressed. (ExA1 - SKNP Vx)
+                case 0x009E: {
+                    if (uint8_t key = keybind[V[x] & 0x0F])
+                        PC += 2;
+                    break;
+                }
+                // Skip next instruction if key with the value of Vx is pressed. (Ex9E - SKP Vx)
+                case 0x00A1: {
+                    const uint8_t key = keybind[V[x] & 0x0F];
+
+                    if (!key)
+                        PC += 2;
+                    break;
+                }
+
+                default:
+                    std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
+                    break;
+            }
 
         case 0xF000:
-            break;
+            switch (opcode & 0x00FF) {
+                // Set Vx = delay timer value. (Fx07 - LD Vx, DT)
+            case 0x0007:
+                    V[x] = delay_timer;
+                    break;
+
+            // Wait for a key press, store the value of the key in Vx. (Fx0A - LD Vx, K)
+            case 0x000A: {
+                pauseCPU();
+
+                bool wait{true};
+
+                for (uint8_t i = 0; i < 16; i++) {
+                    if (keybind[i] != 0) {
+                        V[x] = i;
+                        wait = false;
+                        break;
+                    }
+                }
+
+                if (wait)
+                    PC -= 2;
+                else
+                    unpauseCPU();
+                break;
+            }
+
+            // Set delay timer = Vx. (Fx15 - LD DT, Vx)
+            case 0x0015:
+                delay_timer = V[x];
+                break;
+
+            // Set sound timer = Vx. (Fx18 - LD ST, Vx)
+            case 0x0018:
+                sound_timer = V[x];
+                break;
+
+            // Set I = I + Vx (Fx1E - ADD I, Vx)
+            case 0x001E:
+                I = I + V[x];
+                break;
+
+            // Set I = location of sprite for digit Vx. (Fx29 - LD F, Vx)
+            case 0x0029:
+                I = 0x5 + ( ( V[x] & 0x0F) * 0x5 );
+                break;
+
+            // Store BCD representation of Vx in memory locations I, I+1, and I+2. (Fx33 - LD B, Vx)
+            case 0x0033: {
+                uint8_t temp = V[x];
+                for (int i = 2; i >= 0; i--) {
+                    mem[I+i] = temp%10;
+                    temp = static_cast<uint8_t>(temp/10);
+                }
+                break;
+            }
+
+            // Store registers V0 through Vx in memory starting at location I. (Fx55 - LD [I], Vx)
+            case 0x0055:
+
+                for (int i = 0; i < x; i++) {
+                    mem[I+i] = V[i];
+                }
+                break;
+
+            // Read registers V0 through Vx from memory starting at location I. (Fx65 - LD Vx, [I])
+            case 0x0065:
+                for (int i = 0; i < x; i++) {
+                    V[i] = mem[I+i];
+                }
+                break;
+
+            default:
+                std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
+                break;
+            }
 
         default:
             std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
