@@ -10,6 +10,8 @@
 #include <cstring>
 #include <random>
 
+#define TICKS_PER_SECOND 60.0
+
 struct Display {
     static constexpr int WIDTH = 64;
     static constexpr int HEIGHT = 32;
@@ -61,7 +63,8 @@ private:
 
 public:
     Chip8();
-    ~Chip8();
+
+    ~Chip8() = default;
 
     Chip8(const Chip8&) = delete;
     Chip8& operator=(const Chip8&) = delete;
@@ -129,6 +132,8 @@ public:
     uint8_t getRandomByte() {
         return distr(gen);
     }
+
+    void updateTimers();
 
 };
 

@@ -20,7 +20,7 @@ bool Display::draw(int x, int y, uint8_t sprite_pixel) {
 
     for (int i = 0; i < 8; i++) {
         if (const uint8_t bit = (sprite_pixel >> (7 - i)) & 0x01; bit == 1 ) {
-            const int screenX = (x+1) % 64;
+            const int screenX = (x+i) % 64;
             const int screenY = y % 32;
 
             if ( this->matrix[screenX][screenY] == 1 ) {
@@ -62,13 +62,12 @@ Chip8::Chip8() {
     }
 }
 
-Chip8::~Chip8() {
-
-}
-
 bool Chip8::loadProgram(const std::string &romPath) {
-
     bool success{true};
+
+    // Wipe the memory before loading a new program into the mem, starting from 0x200
+    PC = 0x200;
+    memset(mem + PC, 0, sizeof(mem) - PC);
 
     if (romPath.empty()) {
         constexpr int size = sizeof(testRom);
@@ -121,7 +120,6 @@ bool Chip8::loadProgram(const std::string &romPath) {
 
 
 void Chip8::LoopFDE() {
-
     // Fetch
     const uint32_t opcode = mem[PC] << 8 | mem[PC + 1];
     PC += 2;
@@ -140,62 +138,65 @@ void Chip8::LoopFDE() {
             switch (opcode & 0x00FF) {
 
                 // Clear the screen
-                case 0x00E0:
+            case 0x00E0:
                     display.clear();
                     break;
 
-                //Return from a subroutine.
-                case 0x00EE:
-                    if (SP < 15) {
-                        PC = stack[SP];
-                        SP--;
-                    } else
-                        std::cerr << "Stack overflow."; pauseCPU();
-
+                    //Return from a subroutine.
+            case 0x00EE:
+                    PC = stack[SP];
+                    if (SP > 0) SP--;
                     break;
 
-                default:
+            default:
                     std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
                     break;
             }
+            break;
 
-        // Jump to location nnn (1nnn - JP addr)
+            // Jump to location nnn (1nnn - JP addr)
         case 0x1000:
             PC = nnn;
             return;
 
-        // Call subroutine at nnn (2nn - CALL addr)
+            // Call subroutine at nnn (2nn - CALL addr)
         case 0x2000:
-            SP++;
-            stack[SP] = PC;
-            PC = nnn;
+            if (SP < 15) {
+                stack[SP] = PC;
+                SP++;
+                PC = nnn;
+            } else {
+                std::cerr << "Stack overflow" << std::endl;
+                pauseCPU();
+            }
+
             return;
 
-        // Skip next instruction if Vx = nn (3xkk - SE Vx, byte)
+            // Skip next instruction if Vx = nn (3xkk - SE Vx, byte)
         case 0x3000:
             if (V[x] == kk)
                 PC += 2;
             break;
 
-        // Skip next instruction if Vx != kk. (4xkk - SNE Vx, byte)
+            // Skip next instruction if Vx != kk. (4xkk - SNE Vx, byte)
         case 0x4000:
             if (V[x] != kk)
                 PC += 2;
             break;
 
-        // Skip next instruction if Vx = Vy (5xy0 - SE Vx, Vy)
+            // Skip next instruction if Vx = Vy (5xy0 - SE Vx, Vy)
         case 0x5000:
 
             if (V[x] == V[y])
                 PC += 2;
             break;
 
-        // Set Vx = kk (6xkk - LD Vx, byte)
+            // Set Vx = kk (6xkk - LD Vx, byte)
         case 0x6000:
             V[x] = kk;
             break;
 
-        // Set Vx = Vx + kk (7xkk - ADD Vx, byte)
+            // Set Vx = Vx + kk (7xkk - ADD Vx, byte)
         case 0x7000:
             V[x] = V[x] + kk;
             break;
@@ -203,53 +204,53 @@ void Chip8::LoopFDE() {
         case 0x8000:
             switch (opcode & 0x000F) {
                 // Set Vx = Vy (8xy0 - LD Vx, Vy)
-                case 0x0000:
+            case 0x0000:
                     V[x] = V[y];
                     break;
 
-                // Set Vx = Vx OR Vy (8xy1 - OR Vx, Vy)
-                case 0x0001:
+                    // Set Vx = Vx OR Vy (8xy1 - OR Vx, Vy)
+            case 0x0001:
                     V[x] = V[x] | V[y];
                     break;
 
-                // Set Vx = Vx AND Vy (8xy2 - AND Vx, Vy)
-                case 0x0002:
+                    // Set Vx = Vx AND Vy (8xy2 - AND Vx, Vy)
+            case 0x0002:
                     V[x] = V[x] & V[y];
                     break;
 
-                // Set Vx = Vx XOR Vy (8xy3 - XOR Vx, Vy)
-                case 0x0003:
+                    // Set Vx = Vx XOR Vy (8xy3 - XOR Vx, Vy)
+            case 0x0003:
                     V[x] = V[x] ^ V[y];
                     break;
 
-                // Set Vx = Vx + Vy, set VF = carry. (8xy4 - ADD Vx, Vy)
-                case 0x0004: {
-                    const uint16_t s = (V[x] + V[y]);
+                    // Set Vx = Vx + Vy, set VF = carry. (8xy4 - ADD Vx, Vy)
+            case 0x0004: {
+                const uint16_t s = (V[x] + V[y]);
 
-                    if ( s > 0xFF )
-                        V[0xF] = 1;
-                    else
-                        V[0xF] = 0;
+                if ( s > 0xFF )
+                    V[0xF] = 1;
+                else
+                    V[0xF] = 0;
 
 
-                    V[x] = static_cast<uint8_t>( s & 0x00FF );
+                V[x] = static_cast<uint8_t>( s & 0x00FF );
 
-                    break;
-                }
+                break;
+            }
 
-                // Set Vx = Vx - Vy, set VF = NOT borrow (8xy5 - SUB Vx, Vy)
-                case 0x0005:
+                    // Set Vx = Vx - Vy, set VF = NOT borrow (8xy5 - SUB Vx, Vy)
+            case 0x0005:
 
                     if (V[x] > V[y])
                         V[0xF] = 1;
                     else
                         V[0xF] = 0;
 
-                    V[x] = V[y] - V[x];
+                    V[x] = V[x] - V[y];
                     break;
 
-                // Set Vx = Vx SHR 1. (8xy6 - SHR Vx {, Vy})
-                case 0x0006:
+                    // Set Vx = Vx SHR 1. (8xy6 - SHR Vx {, Vy})
+            case 0x0006:
 
                     if ( (V[x] & 0x01) == 0x01)
                         V[0xF] = 1;
@@ -259,21 +260,21 @@ void Chip8::LoopFDE() {
                     V[x] >>= 1;
                     break;
 
-                // Set Vx = Vy - Vx, set VF = NOT borrow. (8xy7 - SUBN Vx, Vy)
-                case 0x0007:
+                    // Set Vx = Vy - Vx, set VF = NOT borrow. (8xy7 - SUBN Vx, Vy)
+            case 0x0007:
 
                     if (V[y] > V[x])
                         V[0xF] = 1;
                     else
                         V[0xF] = 0;
 
-                    V[x] = V[x] - V[y];
+                    V[x] = V[y] - V[x];
                     break;
 
-                //Set Vx = Vx SHL 1. (8xyE - SHL Vx {, Vy})
-                case 0x000E:
+                    //Set Vx = Vx SHL 1. (8xyE - SHL Vx {, Vy})
+            case 0x000E:
 
-                    if ((V[x] & 0x80) == 0x00)
+                    if ((V[x] & 0x80) == 0x80)
                         V[0xF] = 1;
                     else
                         V[0xF] = 0;
@@ -281,28 +282,29 @@ void Chip8::LoopFDE() {
                     V[x] <<= 1;
                     break;
 
-                default:
+            default:
                     std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
                     break;
             }
+            break;
 
-        // Skip next instruction if Vx != Vy (9xy0 - SNE Vx, Vy)
+            // Skip next instruction if Vx != Vy (9xy0 - SNE Vx, Vy)
         case 0x9000:
             if (V[x] != V[y])
                 PC += 2;
             break;
 
-        // Set I = nnn.(Annn - LD I, addr)
+            // Set I = nnn.(Annn - LD I, addr)
         case 0xA000:
             I = nnn;
             break;
 
-        // Jump to location nnn + V0. (Bnnn - JP V0, addr)
+            // Jump to location nnn + V0. (Bnnn - JP V0, addr)
         case 0xB000:
             PC = nnn + V[0x00];
             break;
 
-        // Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
+            // Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
         case 0xC000: {
             const uint8_t rnd_byte = getRandomByte();
             V[x] = rnd_byte & kk;
@@ -310,7 +312,7 @@ void Chip8::LoopFDE() {
             break;
         }
 
-        // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision (Dxyn - DRW Vx, Vy, nibble)
+            // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision (Dxyn - DRW Vx, Vy, nibble)
         case 0xD000:
 
             V[0x0F] = 0;
@@ -326,25 +328,25 @@ void Chip8::LoopFDE() {
 
             switch ( opcode & 0x00FF ) {
 
-                // Skip next instruction if key with the value of Vx is not pressed. (ExA1 - SKNP Vx)
-                case 0x009E: {
-                    if (uint8_t key = keybind[V[x] & 0x0F])
-                        PC += 2;
-                    break;
-                }
                 // Skip next instruction if key with the value of Vx is pressed. (Ex9E - SKP Vx)
-                case 0x00A1: {
-                    const uint8_t key = keybind[V[x] & 0x0F];
-
-                    if (!key)
+            case 0x009E:
+                    if (keybind[V[x] & 0x0F])
                         PC += 2;
                     break;
-                }
 
-                default:
+                    // Skip next instruction if key with the value of Vx is not pressed. (ExA1 - SKNP Vx)
+            case 0x00A1: {
+                if (const uint8_t key = keybind[V[x] & 0x0F]; !key)
+                    PC += 2;
+                break;
+
+            }
+
+            default:
                     std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
                     break;
             }
+            break;
 
         case 0xF000:
             switch (opcode & 0x00FF) {
@@ -353,7 +355,7 @@ void Chip8::LoopFDE() {
                     V[x] = delay_timer;
                     break;
 
-            // Wait for a key press, store the value of the key in Vx. (Fx0A - LD Vx, K)
+                    // Wait for a key press, store the value of the key in Vx. (Fx0A - LD Vx, K)
             case 0x000A: {
                 pauseCPU();
 
@@ -374,27 +376,27 @@ void Chip8::LoopFDE() {
                 break;
             }
 
-            // Set delay timer = Vx. (Fx15 - LD DT, Vx)
+                    // Set delay timer = Vx. (Fx15 - LD DT, Vx)
             case 0x0015:
-                delay_timer = V[x];
-                break;
+                    delay_timer = V[x];
+                    break;
 
-            // Set sound timer = Vx. (Fx18 - LD ST, Vx)
+                    // Set sound timer = Vx. (Fx18 - LD ST, Vx)
             case 0x0018:
-                sound_timer = V[x];
-                break;
+                    sound_timer = V[x];
+                    break;
 
-            // Set I = I + Vx (Fx1E - ADD I, Vx)
+                    // Set I = I + Vx (Fx1E - ADD I, Vx)
             case 0x001E:
-                I = I + V[x];
-                break;
+                    I = I + V[x];
+                    break;
 
-            // Set I = location of sprite for digit Vx. (Fx29 - LD F, Vx)
+                    // Set I = location of sprite for digit Vx. (Fx29 - LD F, Vx)
             case 0x0029:
-                I = 0x5 + ( ( V[x] & 0x0F) * 0x5 );
-                break;
+                    I = 0x50 + ( ( V[x] & 0x0F) * 0x5 );
+                    break;
 
-            // Store BCD representation of Vx in memory locations I, I+1, and I+2. (Fx33 - LD B, Vx)
+                    // Store BCD representation of Vx in memory locations I, I+1, and I+2. (Fx33 - LD B, Vx)
             case 0x0033: {
                 uint8_t temp = V[x];
                 for (int i = 2; i >= 0; i--) {
@@ -404,42 +406,34 @@ void Chip8::LoopFDE() {
                 break;
             }
 
-            // Store registers V0 through Vx in memory starting at location I. (Fx55 - LD [I], Vx)
+                    // Store registers V0 through Vx in memory starting at location I. (Fx55 - LD [I], Vx)
             case 0x0055:
 
-                for (int i = 0; i < x; i++) {
-                    mem[I+i] = V[i];
-                }
-                break;
+                    for (int i = 0; i <= x; i++) {
+                        mem[I+i] = V[i];
+                    }
+                    break;
 
-            // Read registers V0 through Vx from memory starting at location I. (Fx65 - LD Vx, [I])
+                    // Read registers V0 through Vx from memory starting at location I. (Fx65 - LD Vx, [I])
             case 0x0065:
-                for (int i = 0; i < x; i++) {
-                    V[i] = mem[I+i];
-                }
-                break;
+                    for (int i = 0; i <= x; i++) {
+                        V[i] = mem[I+i];
+                    }
+                    break;
 
             default:
-                std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
-                break;
+                    std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
+                    break;
             }
+            break;
 
         default:
             std::cerr << "Opcode doesnt supported: " << std::hex << opcode << std::endl;
             break;
-    }
+       }
+}
 
-    PC+=2;
-
-    // UpdateTimers
-    if (sound_timer > 0) {
-        sound_timer--;
-    }
-
-    if (delay_timer > 0) {
-        delay_timer--;
-    }
-
-
-
+void Chip8::updateTimers() {
+            if (sound_timer > 0) this->sound_timer--;
+            if (delay_timer > 0)this->delay_timer--;
 }

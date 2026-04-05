@@ -15,6 +15,8 @@ add_executable(CHIP-8
         src/main.h
         src/chip8.cpp
         src/chip8.h
+        src/chip8_gui.cpp
+        src/chip8_gui.h
 )
 
 target_link_libraries(CHIP-8 PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)
