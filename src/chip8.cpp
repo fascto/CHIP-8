@@ -429,10 +429,16 @@ void Chip8::LoopFDE() {
             break;
     }
 
-    // Execute
     PC+=2;
 
     // UpdateTimers
+    if (sound_timer > 0) {
+        sound_timer--;
+    }
+
+    if (delay_timer > 0) {
+        delay_timer--;
+    }
 
 
 
