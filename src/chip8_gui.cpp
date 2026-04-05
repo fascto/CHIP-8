@@ -4,8 +4,6 @@
 
 #include "chip8_gui.h"
 
-#include "../vendored/SDL/src/render/SDL_sysrender.h"
-
 Chip8Gui::Chip8Gui(Chip8* chip8) : chip8(chip8) { }
 
 Chip8Gui::~Chip8Gui() {
@@ -31,7 +29,7 @@ bool Chip8Gui::init() {
 }
 
 void Chip8Gui::update() {
-
+    // README: I think this is overkill
 }
 
 

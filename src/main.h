@@ -8,9 +8,7 @@
 
 #include <iostream>
 #include <ostream>
-#include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
-
+#include <cstdint>
 
 constexpr uint16_t FPS = 60;
 constexpr uint16_t THRESHOLD = 1 / FPS;
