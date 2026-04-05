@@ -115,7 +115,7 @@ public:
         return (opcode & 0x00FF);
     }
 
-    static constexpr uint8_t getNNN(const uint16_t opcode) {
+    static constexpr uint16_t getNNN(const uint16_t opcode) {
         return (opcode & 0x0FFF);
     }
 

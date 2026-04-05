@@ -28,7 +28,7 @@ int main( int argc, char* args[] ) {
     SDL_zero( event );
 
     // Carga del Juego
-    if ( !chip8.loadProgram("dummy.ch8") ) {
+    if ( !chip8.loadProgram("../../tetris.ch8") ) {
         std::cout << "Failed to load program!" << std::endl;
         exit_code = 2;
         return exit_code;

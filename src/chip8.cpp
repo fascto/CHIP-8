@@ -322,7 +322,7 @@ void Chip8::LoopFDE() {
             V[0x0F] = 0;
 
             for (uint8_t i = 0; i < n; i++) {
-                if (display.draw(V[x], V[y], mem[I+i]))
+                if (display.draw(V[x], V[y]+i, mem[I+i]))
                     V[0x0F] = 1;
             }
 
